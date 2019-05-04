@@ -27,7 +27,7 @@ public class C {
 	 */
 	public static void main(String[] args) throws Exception{
 		// TODO Auto-generated method stub
-		ExecutorService ex = Executors.newFixedThreadPool(1) ;		
+		
 		System.out.println(MAESTRO + "Establezca puerto de conexion:");
 		InputStreamReader isr = new InputStreamReader(System.in);
 		BufferedReader br = new BufferedReader(isr);
@@ -36,7 +36,13 @@ public class C {
 		// Adiciona la libreria como un proveedor de seguridad.
 		// Necesario para crear llaves.
 		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());	
-
+		// Código para hacer las pruebas
+		System.out.println(MAESTRO + "Establezca el numero de prueba");
+		InputStreamReader isr2 = new InputStreamReader(System.in);
+		BufferedReader br2 = new BufferedReader(isr2);
+		String nPrueba = br2.readLine();
+		System.out.println(nPrueba);
+		//----------------------------------------
 		int idThread = 0;
 		// Crea el socket que escucha en el puerto seleccionado.
 		ss = new ServerSocket(ip);
@@ -45,13 +51,23 @@ public class C {
 		keyPairServidor = S.grsa();
 		certSer = S.gc(keyPairServidor);
 		D.initCertificate(certSer, keyPairServidor);
+
+		// Seleción de threads
+		ExecutorService ex = Executors.newFixedThreadPool(1) ;
+		Monitor monitor = new Monitor(nPrueba);
+		boolean empece = false;
+		//-----------------------
 		while (true) {
 			try { 
 				Socket sc = ss.accept();
-				System.out.println(MAESTRO + "Cliente " + idThread + " aceptado.");		
-				long startTime = System.nanoTime();
-				ex.submit( new D(sc,idThread)) ;	
-				long endTime = System.nanoTime() - startTime; 			
+				if(!empece)
+				{
+					monitor.start();
+					empece = true ;
+				}
+				
+				System.out.println(MAESTRO + "Cliente " + idThread + " aceptado.");
+				ex.execute( new D(sc,idThread, nPrueba)) ;				
 				idThread++;
 				
 			} catch (IOException e) {

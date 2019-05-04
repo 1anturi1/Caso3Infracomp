@@ -1,7 +1,10 @@
 package srvConSeg;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -32,8 +35,13 @@ public class D extends Thread {
 	private byte[] mybyte;
 	private static X509Certificate certSer;
 	private static KeyPair keyPairServidor;
+	//Buffer para escribir el archivo con los resultados
+	BufferedWriter buffer = null;
 	
-	public D (Socket csP, int idP) {
+	public D (Socket csP, int idP, String nPrueba) throws IOException {
+		//Creación del archivo dónde se van a ver las pruebas
+		this.buffer = new BufferedWriter(new FileWriter("E1Prueba"+nPrueba+".csv",true));
+		//------------------
 		sc = csP;
 		dlg = new String("delegado " + idP + ": ");
 		try {
@@ -121,6 +129,9 @@ public class D extends Thread {
 				System.out.println(dlg + "envio certificado del servidor. continuando.");				
 
 				/***** Fase 5: *****/
+				// Medida inicial de tiempo
+				long tiempoInicial= System.nanoTime();				
+				//-------------------------
 				linea = dc.readLine();
 				byte[] llaveSimetrica = S.ad(
 						toByteArray(linea), 
@@ -137,7 +148,7 @@ public class D extends Thread {
 				System.out.println(dlg + "envio llave simetrica al cliente. continuado.");
 
 				linea = dc.readLine();
-				if (!(linea.equals(OK))) {
+				if (linea !=null &&!(linea.equals(OK))) {
 					sc.close();
 					throw new Exception(dlg + ERROR + "en confirmacion de llave simetrica." + REC + "-terminando.");
 				}
@@ -163,6 +174,14 @@ public class D extends Thread {
 					throw new Exception(dlg + "Error en verificacion de integridad. -terminando.");
 				}
 				
+				// Tiempo Final, resta y escritura en el archivo
+				long tiempoFinal = System.nanoTime();
+				long tiempoTotal = tiempoFinal -tiempoInicial;
+				String tiempoString = tiempoTotal +";" + System.nanoTime();
+				buffer.newLine();
+				buffer.write(tiempoString);
+				buffer.close();
+				//----------------------------------------
 		        sc.close();
 		        System.out.println(dlg + "Termino exitosamente.");
 				
