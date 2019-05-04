@@ -51,10 +51,7 @@ public class C {
 				System.out.println(MAESTRO + "Cliente " + idThread + " aceptado.");		
 				long startTime = System.nanoTime();
 				ex.submit( new D(sc,idThread)) ;	
-				long endTime = System.nanoTime() - startTime; 
-				
-				
-				
+				long endTime = System.nanoTime() - startTime; 			
 				idThread++;
 				
 			} catch (IOException e) {
