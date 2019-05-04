@@ -16,7 +16,7 @@ public class Monitor extends Thread{
 	
 	
 	public Monitor(String nPrueba) throws IOException {
-		this.log = new BufferedWriter(new FileWriter("E6CPU"+nPrueba+".csv",false));
+		this.log = new BufferedWriter(new FileWriter("E8CPU"+nPrueba+".csv",false));
 	}
 	public void run() {
 		

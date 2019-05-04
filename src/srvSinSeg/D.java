@@ -1,7 +1,10 @@
 package srvSinSeg;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -42,8 +45,13 @@ public class D extends Thread {
 	private byte[] mybyte;
 	private static X509Certificate certSer;
 	private static KeyPair keyPairServidor;
+	//Buffer para escribir el archivo con los resultados
+	BufferedWriter buffer = null;
 	
-	public D (Socket csP, int idP) {
+	public D (Socket csP, int idP, String nPrueba) throws IOException {
+		//Creación del archivo dónde se van a ver las pruebas
+		this.buffer = new BufferedWriter(new FileWriter("E8Prueba"+nPrueba+".csv",true));
+		//------------------
 		sc = csP;
 		dlg = new String("delegado sin" + idP + ": ");
 		try {
@@ -131,6 +139,10 @@ public class D extends Thread {
 				System.out.println(dlg + "envio certificado del servidor. continuando.");				
 
 				/***** Fase 5: *****/
+				
+				// Medida inicial de tiempo
+				long tiempoInicial= System.nanoTime();
+				
 				linea = dc.readLine();
 				byte[] llaveSimetrica = toByteArray(linea);
 				System.out.println(dlg + "creo llave simetrica de dato recibido. continuando.");				
@@ -163,6 +175,14 @@ public class D extends Thread {
 					throw new Exception(dlg + "Error en verificacion de integridad. -terminando.");
 				}
 
+				// Tiempo Final, resta y escritura en el archivo
+				long tiempoFinal = System.nanoTime();
+				long tiempoTotal = tiempoFinal -tiempoInicial;
+				String tiempoString = tiempoTotal +";" + System.nanoTime();
+				buffer.newLine();
+				buffer.write(tiempoString);
+				buffer.close();
+				//----------------------------------------
 		        sc.close();
 		        System.out.println(dlg + "Termino exitosamente.");
 				
