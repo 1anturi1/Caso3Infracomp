@@ -53,7 +53,7 @@ public class C {
 		D.initCertificate(certSer, keyPairServidor);
 
 		// Seleción de threads
-		ExecutorService ex = Executors.newFixedThreadPool(1) ;
+		ExecutorService ex = Executors.newFixedThreadPool(2) ;
 		Monitor monitor = new Monitor(nPrueba);
 		boolean empece = false;
 		//-----------------------

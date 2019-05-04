@@ -48,7 +48,7 @@ public class ClienteS extends Task
 	/**
 	 * Servidor
 	 */
-	public static final String SERVIDOR = "157.253.210.40";
+	public static final String SERVIDOR = "localhost";
 	/**
 	 * Llaves
 	 */
@@ -208,6 +208,7 @@ public class ClienteS extends Task
 		//-----------------------------------------------------------------
 		System.out.println("Recibiendo llave simetrica");
 		String linea = lector.readLine();
+		System.out.println(linea);
 		byte[] llaveSimetrica = descifrar( aArregloBytes(linea), 
 		        llavesCliente.getPrivate(), "RSA");
 		
@@ -313,7 +314,7 @@ public class ClienteS extends Task
 	public static byte[] descifrar(byte[] mensaje, Key llave, String metodo)
 			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
 	{
-		System.out.println(metodo);
+		
 		Cipher decifrador = Cipher.getInstance(metodo);
 		decifrador.init(Cipher.DECRYPT_MODE, llave);
 		return decifrador.doFinal(mensaje);

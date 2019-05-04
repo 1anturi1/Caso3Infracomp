@@ -40,7 +40,7 @@ public class D extends Thread {
 	
 	public D (Socket csP, int idP, String nPrueba) throws IOException {
 		//Creación del archivo dónde se van a ver las pruebas
-		this.buffer = new BufferedWriter(new FileWriter("E1Prueba"+nPrueba+".csv",true));
+		this.buffer = new BufferedWriter(new FileWriter("E6Prueba"+nPrueba+".csv",true));
 		//------------------
 		sc = csP;
 		dlg = new String("delegado " + idP + ": ");
@@ -142,8 +142,7 @@ public class D extends Thread {
 				
 				/***** Fase 6:  *****/
 				
-				byte [ ] ciphertext1 = S.ae(simetrica.getEncoded(), 
-		                 certificadoCliente.getPublicKey(), algoritmos[2]);
+				byte [ ] ciphertext1 = S.ae(simetrica.getEncoded(), certificadoCliente.getPublicKey(), algoritmos[2]);
 				ac.println(toHexString(ciphertext1));
 				System.out.println(dlg + "envio llave simetrica al cliente. continuado.");
 
