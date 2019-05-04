@@ -37,148 +37,55 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 
-
-public class ClienteS 
+//importar task
+import uniandes.gload.core.Task;
+public class ClienteS extends Task
 {
-	public static final int PUERTO = 3400;
+	/**
+	 * Puerto
+	 */
+	public static final int PUERTO = 8080;
+	/**
+	 * Servidor
+	 */
 	public static final String SERVIDOR = "localhost";
+	/**
+	 * Llaves
+	 */
 	private static java.security.KeyPair llavesCliente;
 
-	public static void main (String args[]) throws IOException
+	public void execute()
 	{
 		llavesCliente = generarLlaves();
 
 		Socket socket = null;
 		PrintWriter escritor = null;
 		BufferedReader lector = null;
-
 		try {
 
-			//--------------------------------------------------------
-			//  Enviando "HOLA"
-			//--------------------------------------------------------
 			// Crea el socket en el lado cliente
-			
-			System.out.println("Creando el socket en el lado cliente");
 			socket = new Socket(SERVIDOR, PUERTO);
 			escritor = new PrintWriter(socket.getOutputStream(),true);
 			lector = new BufferedReader( new InputStreamReader(socket.getInputStream()));
-			
-			System.out.println("Iniciando el protocolo de comunicación	");
-			escritor.println("HOLA");
-			
-			//-------------------------------------------------------
-			// Recibir "OK"
-			//-------------------------------------------------------
-			
-			System.out.println("Recibiendo respuesta del servidor");
-			String fromServer =lector.readLine();
-			if( fromServer == null || !fromServer.equals("OK"))
-			{
-				throw new Exception("El servidor me está mandando algo diferente a OK me manda: "+ fromServer);
-			}
-
-			//-----------------------------------------------------------------
-			// Le mando los 3 algoritmos necesarios para el funcionamiento
-			//-----------------------------------------------------------------
-			//Le mando los tres algoritmos
-			
-			System.out.println("Enviando algoritmos");
-			escritor.println("ALGORITMOS:AES:RSA:HMACSHA1");
-
-			//-----------------------------------------------------------------
-			// Recibo el "OK"
-			//-----------------------------------------------------------------
-			
-			System.out.println("Recibiendo respuesta del servidor");
-			fromServer = lector.readLine();
-			if(fromServer ==null || !fromServer.equals("OK"))
-			{
-				throw new Exception("El servidor me está mandando algo diferente a OK me manda: "+ fromServer);
-			}
-			
-			//-----------------------------------------------------------------
-			// Generar y envíar el certificado
-			//-----------------------------------------------------------------
-			
-			System.out.println("Enviando certificado al servidor");
-			String certificadoEnString = generarCertificado(llavesCliente);
-			escritor.println(certificadoEnString);
-
-			//-----------------------------------------------------------------
-			// Recibir y procesar el certificado del servidor
-			//-----------------------------------------------------------------
-			
-			System.out.println("Recibiendo certificado del servidor");
-			String strCertificadoServidor = lector.readLine();
-			byte[] certificadoServidorBytes = new byte['K'];
-			certificadoServidorBytes = aArregloBytes(strCertificadoServidor);
-			CertificateFactory creador = CertificateFactory.getInstance("X.509");
-			InputStream in = new ByteArrayInputStream(certificadoServidorBytes);
-			X509Certificate certificadoServidor = (X509Certificate)creador.generateCertificate(in);
-
-			//-----------------------------------------------------------------
-			//Creación y envío de la llave simétrica
-			//-----------------------------------------------------------------
-			System.out.println("Generando llave simetrica");
-			KeyGenerator keygen = KeyGenerator.getInstance("AES");
-			SecretKey simetrica = keygen.generateKey();
-			byte[] ciphertext1 = cifrar(simetrica.getEncoded(),certificadoServidor.getPublicKey(), "RSA");
-			
-			System.out.println("Enviando llave simetrica");
-			escritor.println(aHexaString(ciphertext1));
-			
-			//------------------------------------------------------------------
-			// Comparo la llave que me llega por la que ya tengo. 
-			//-----------------------------------------------------------------
-			System.out.println("Recibiendo llave simetrica");
-			String linea = lector.readLine();
-			byte[] llaveSimetrica = descifrar( aArregloBytes(linea), 
-			        llavesCliente.getPrivate(), "RSA");
-			
-			System.out.println("Validando llave simetrica");
-			SecretKey simetrica1 = new SecretKeySpec(llaveSimetrica, 0, llaveSimetrica.length, "AES");
-			if (!simetrica.equals(simetrica1)) 
-			{
-				escritor.println("ERROR");
-				throw new Exception("Las llaves simétricas no coinciden");
-			}
-			System.out.println("Llave simetrica validada, enviando "+"OK");
-			escritor.println("OK");
-			
-			//-----------------------------------------------------------------
-			// Envío de datos
-			//----------------------------------------------------------------
-			System.out.println("Enviando datos cifrados por la llave simétrica");
-			String mensaje = "15;44.228,21.18";
-			byte[] bMensaje = mensaje.getBytes();
-			String datosCifrado = aHexaString(cifrarSimetrico(bMensaje, simetrica, "AES"));
-			escritor.println(datosCifrado);
-			
-			
-			//-----------------------------------------------------------------
-			// Creación y envío de HMAC
-			//-----------------------------------------------------------------
-			System.out.println("Enviando HMAC");
-			byte[] HMAC = HMAC(bMensaje, simetrica, "HMACSHA1");
-			escritor.println(aHexaString(HMAC));
-			
-			//-----------------------------------------------------------------
-			// Validación de datos reenviados por el servidor
-			//-----------------------------------------------------------------
-			String val = lector.readLine() ;	
-			System.out.println("Recibiendo validacion de datos por parte del servidor");
-			if (val.equals("ERROR"))
-			{
-				System.out.println("Esxiste una inconsistencia en los datos recibidos");
-				System.out.println("Terminando.");
-			}
-			else
-			{
-				System.out.println("Terminando exitosamente.");
-			}
-			
+			procesar(lector, escritor);
+			escritor.close();
+			lector.close();
 			socket.close();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+
+			
+			escritor.close();
+			lector.close();
+			socket.close();
+			
 			
 		}
 		catch (Exception e) {
@@ -223,7 +130,129 @@ public class ClienteS
 		return null;
 
 	}
+	
+	public static void procesar (BufferedReader lector, PrintWriter escritor) throws Exception
+	{
+		//--------------------------------------------------------
+		//  Enviando "HOLA"
+		//--------------------------------------------------------
+		// Crea el socket en el lado cliente
+		
+				
+		System.out.println("Iniciando el protocolo de comunicación	");
+		escritor.println("HOLA");
+		
+		//-------------------------------------------------------
+		// Recibir "OK"
+		//-------------------------------------------------------
+		
+		System.out.println("Recibiendo respuesta del servidor");
+		String fromServer =lector.readLine();
+		if( fromServer == null || !fromServer.equals("OK"))
+		{
+			throw new Exception("El servidor me está mandando algo diferente a OK me manda: "+ fromServer);
+		}
 
+		//-----------------------------------------------------------------
+		// Le mando los 3 algoritmos necesarios para el funcionamiento
+		//-----------------------------------------------------------------
+		//Le mando los tres algoritmos
+		
+		System.out.println("Enviando algoritmos");
+		escritor.println("ALGORITMOS:AES:RSA:HMACSHA1");
+
+		//-----------------------------------------------------------------
+		// Recibo el "OK"
+		//-----------------------------------------------------------------
+		
+		System.out.println("Recibiendo respuesta del servidor");
+		fromServer = lector.readLine();
+		if(fromServer ==null || !fromServer.equals("OK"))
+		{
+			throw new Exception("El servidor me está mandando algo diferente a OK me manda: "+ fromServer);
+		}
+		
+		//-----------------------------------------------------------------
+		// Generar y envíar el certificado
+		//-----------------------------------------------------------------
+		
+		System.out.println("Enviando certificado al servidor");
+		String certificadoEnString = generarCertificado(llavesCliente);
+		escritor.println(certificadoEnString);
+
+		//-----------------------------------------------------------------
+		// Recibir y procesar el certificado del servidor
+		//-----------------------------------------------------------------
+		
+		System.out.println("Recibiendo certificado del servidor");
+		String strCertificadoServidor = lector.readLine();
+		byte[] certificadoServidorBytes = new byte['K'];
+		certificadoServidorBytes = aArregloBytes(strCertificadoServidor);
+		CertificateFactory creador = CertificateFactory.getInstance("X.509");
+		InputStream in = new ByteArrayInputStream(certificadoServidorBytes);
+		X509Certificate certificadoServidor = (X509Certificate)creador.generateCertificate(in);
+
+		//-----------------------------------------------------------------
+		//Creación y envío de la llave simétrica
+		//-----------------------------------------------------------------
+		System.out.println("Generando llave simetrica");
+		KeyGenerator keygen = KeyGenerator.getInstance("AES");
+		SecretKey simetrica = keygen.generateKey();
+		byte[] ciphertext1 = cifrar(simetrica.getEncoded(),certificadoServidor.getPublicKey(), "RSA");
+		
+		System.out.println("Enviando llave simetrica");
+		escritor.println(aHexaString(ciphertext1));
+		
+		//------------------------------------------------------------------
+		// Comparo la llave que me llega por la que ya tengo. 
+		//-----------------------------------------------------------------
+		System.out.println("Recibiendo llave simetrica");
+		String linea = lector.readLine();
+		byte[] llaveSimetrica = descifrar( aArregloBytes(linea), 
+		        llavesCliente.getPrivate(), "RSA");
+		
+		System.out.println("Validando llave simetrica");
+		SecretKey simetrica1 = new SecretKeySpec(llaveSimetrica, 0, llaveSimetrica.length, "AES");
+		if (!simetrica.equals(simetrica1)) 
+		{
+			escritor.println("ERROR");
+			throw new Exception("Las llaves simétricas no coinciden");
+		}
+		System.out.println("Llave simetrica validada, enviando "+"OK");
+		escritor.println("OK");
+		
+		//-----------------------------------------------------------------
+		// Envío de datos
+		//----------------------------------------------------------------
+		System.out.println("Enviando datos cifrados por la llave simétrica");
+		String mensaje = "15;44.228,21.18";
+		byte[] bMensaje = mensaje.getBytes();
+		String datosCifrado = aHexaString(cifrarSimetrico(bMensaje, simetrica, "AES"));
+		escritor.println(datosCifrado);
+		
+		
+		//-----------------------------------------------------------------
+		// Creación y envío de HMAC
+		//-----------------------------------------------------------------
+		System.out.println("Enviando HMAC");
+		byte[] HMAC = HMAC(bMensaje, simetrica, "HMACSHA1");
+		escritor.println(aHexaString(HMAC));
+		
+		//-----------------------------------------------------------------
+		// Validación de datos reenviados por el servidor
+		//-----------------------------------------------------------------
+		String val = lector.readLine() ;	
+		System.out.println("Recibiendo validacion de datos por parte del servidor");
+		if (val.equals("ERROR"))
+		{
+			System.out.println("Esxiste una inconsistencia en los datos recibidos");
+			System.out.println("Terminando.");
+		}
+		else
+		{
+			System.out.println("Terminando exitosamente.");
+		}
+	}
 	/**
 	 * Método auxiliar para crear el certificado
 	 * @param llaves llaves del cliente X509Certificate
@@ -284,8 +313,9 @@ public class ClienteS
 	public static byte[] descifrar(byte[] mensaje, Key llave, String metodo)
 			throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
 	{
+		System.out.println(metodo);
 		Cipher decifrador = Cipher.getInstance(metodo);
-		decifrador.init(2, llave);
+		decifrador.init(Cipher.DECRYPT_MODE, llave);
 		return decifrador.doFinal(mensaje);
 	}
 	//----------------------------------------------------------------
@@ -297,6 +327,18 @@ public class ClienteS
 
 	public static byte[] aArregloBytes(String s) {
 		return DatatypeConverter.parseHexBinary(s);
+	}
+	//---------------------------------------------------
+	// Métodos de de Gload
+	//---------------------------------------------------
+	@Override
+	public void fail() {
+		System.out.println(Task.MENSAJE_FAIL);
+	}
+
+	@Override
+	public void success() {
+		System.out.println(Task.OK_MESSAGE);
 	}
 
 }
